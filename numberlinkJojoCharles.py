@@ -138,7 +138,7 @@ class NumberLink(Problem):
                 direction_letters='DOWN'
             if direction == [-1, 0]:
                 direction_letters='UP'
-            if direction == [0, -1]: [1,1]
+            if direction == [0, -1]:
                 direction_letters='LEFT'
             if direction == [0, 1]:
                 direction_letters='RIGHT'
