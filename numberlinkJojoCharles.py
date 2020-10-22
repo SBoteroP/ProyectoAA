@@ -5,7 +5,6 @@ import sys
 import search
 from search import *
 from copy import deepcopy
-import winsound
 
 #Author: Jonathan Miel 16013 et Charles Vandermies 15123
 
@@ -131,8 +130,6 @@ class NumberLink(Problem):
             possible_actions.remove('RIGHT')
 
 
-
-        directions=[[1, 0], [-1, 0], [0, -1], [0, 1]]
         pos_being_checked=[0,0]
 
         for direction in directions: #on check dans chaque direction si il y a des problèmes aux cases adjacentes
@@ -219,7 +216,8 @@ def pathExistsDFS(array, start, end, visited):
                 return True
     return False
 
-def inBounds(array, pos): #renvoie si on est toujours dans le state.array
+def inBounds(array, pos):
+    #renvoie si on est toujours dans le state.array
     return 0 <= pos[0] and pos[0] < len(array) and 0 <= pos[1] and pos[1] < len(array[0])
 
 
