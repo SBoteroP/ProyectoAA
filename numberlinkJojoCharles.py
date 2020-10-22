@@ -94,7 +94,6 @@ class NumberLink(Problem):
         return state.curr_ok == self.goal
     
     def actions(self, state):
-        position=state.curr_pos
         possible_actions = ['DOWN', 'UP', 'LEFT', 'RIGHT']
         column_length=len(state.array)
         row_length=len(state.array[0])
@@ -107,30 +106,28 @@ class NumberLink(Problem):
 
         #removing actions only considering an empty state.array
 
-        if position[0]==column_length-1: #if at the last row
+        if state.curr_pos[0]==column_length-1: #if at the last row
             possible_actions.remove('DOWN')
-        if position[0]==0: #if at the first row
+        if state.curr_pos[0]==0: #if at the first row
             possible_actions.remove('UP')
-        if position[1]==0: #if at the first column
+        if state.curr_pos[1]==0: #if at the first column
             possible_actions.remove('LEFT')
-        if position[1]==row_length-1: #if at the last column
+        if state.curr_pos[1]==row_length-1: #if at the last column
             possible_actions.remove('RIGHT')
 
         #removing actions considering letters  
         
-        if inBounds(state.array, [position[0]+1,position[1]])==True and state.array[position[0]+1][position[1]] != '.' and [position[0]+1,position[1]] != state.last_pos:
+        if inBounds(state.array, [state.curr_pos[0]+1,state.curr_pos[1]])==True and state.array[state.curr_pos[0]+1][state.curr_pos[1]] != '.' and [state.curr_pos[0]+1,state.curr_pos[1]] != state.last_pos:
             possible_actions.remove('DOWN')
 
-        if inBounds(state.array, [position[0]-1,position[1]])==True and state.array[position[0]-1][position[1]] != '.' and [position[0]-1,position[1]] != state.last_pos: #si on est toujours dans le bounds, si c'est autre chose qu'un point et si la position est différente que la derenière position (la ou on veut aller pour la lettre courant), alors on enlève la possiiblité d'y aller
+        if inBounds(state.array, [state.curr_pos[0]-1,state.curr_pos[1]])==True and state.array[state.curr_pos[0]-1][state.curr_pos[1]] != '.' and [state.curr_pos[0]-1,state.curr_pos[1]] != state.last_pos: #si on est toujours dans le bounds, si c'est autre chose qu'un point et si la state.curr_pos est différente que la derenière state.curr_pos (la ou on veut aller pour la lettre courant), alors on enlève la possiiblité d'y aller
             possible_actions.remove('UP')
 
-        if inBounds(state.array, [position[0],position[1]-1])==True and state.array[position[0]][position[1]-1] != '.' and [position[0],position[1]-1] != state.last_pos:
+        if inBounds(state.array, [state.curr_pos[0],state.curr_pos[1]-1])==True and state.array[state.curr_pos[0]][state.curr_pos[1]-1] != '.' and [state.curr_pos[0],state.curr_pos[1]-1] != state.last_pos:
             possible_actions.remove('LEFT')
 
-        if inBounds(state.array, [position[0],position[1]+1])==True and state.array[position[0]][position[1]+1] != '.' and [position[0],position[1]+1] != state.last_pos:
+        if inBounds(state.array, [state.curr_pos[0],state.curr_pos[1]+1])==True and state.array[state.curr_pos[0]][state.curr_pos[1]+1] != '.' and [state.curr_pos[0],state.curr_pos[1]+1] != state.last_pos:
             possible_actions.remove('RIGHT')
-
-
 
         directions=[[1, 0], [-1, 0], [0, -1], [0, 1]]
         pos_being_checked=[0,0]
@@ -141,7 +138,7 @@ class NumberLink(Problem):
                 direction_letters='DOWN'
             if direction == [-1, 0]:
                 direction_letters='UP'
-            if direction == [0, -1]:
+            if direction == [0, -1]: [1,1]
                 direction_letters='LEFT'
             if direction == [0, 1]:
                 direction_letters='RIGHT'
@@ -155,6 +152,7 @@ class NumberLink(Problem):
                 return possible_actions
 
             i=0
+
             side_being_checked=[0,0]
             for side in directions: #pour chaque direction on regarde autour pour compter le nombre de Lettre en cours de traitement
                 
@@ -198,7 +196,6 @@ class NumberLink(Problem):
 # Auxiliary function #
 ######################
 
-directions = [ [0, -1], [0, 1], [-1, 0], [1, 0] ]
 
 def pathExists(array, start, end):
     visited = [ [0 for j in range(0, len(array[0]))] for i in range(0, len(array)) ]
