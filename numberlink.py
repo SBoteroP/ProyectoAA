@@ -5,6 +5,8 @@ from search import *
 from copy import deepcopy
 from search import astar_search
 
+import heapq
+
 
 class State:
 
@@ -26,7 +28,7 @@ class State:
                 and self.currentletter == other.currentletter)
 
     def __hash__(self):
-        return hash(self.__str__() + self.currentletter)
+        return hash(self.__str__() + self.curr_letter)
 
     def __str__(self):
         string = ""
@@ -60,6 +62,7 @@ class State:
                 j += 1
             i += 1
         return buf
+
 
 
 class NumberLink(Problem):
@@ -187,6 +190,8 @@ class NumberLink(Problem):
         else:
             return State(new_state.array, state.curr_letter, state.curr_ok,
                          new_state.curr_pos, state.last_pos)
+            
+        
 
     def result(self, state, action):
         new_state = deepcopy(state)
@@ -213,6 +218,8 @@ class NumberLink(Problem):
         else:
             return State(new_state.array, state.curr_letter, state.curr_ok,
                          new_state.curr_pos, state.last_pos)
+
+        #########
 
 
 directions = [[0, -1], [0, 1], [-1, 0], [1, 0]]
@@ -245,22 +252,131 @@ def inBounds(array, pos):
         array[0])
 
 
-problem = NumberLink(sys.argv[1])
-solution = search.breadth_first_tree_search(problem)
+# problem = NumberLink(sys.argv[1])
+# solution = search.breadth_first_tree_search(problem)
 
-for n in solution.path():
-    print(n.state)
+# for n in solution.path():
+#    print(n.state)
+
+class FlowFreeSolver(Problem):
+    def __init__(self, initial_state):
+        super().__init__(initial_state)
+    
+    def goal_test(self, state):
+        # Define your goal test logic here
+        # This could be checking if all pairs are connected
+        return state.curr_ok == self.lasty(state.array)
 
 
-def play_game(file_path):
+    def actions(self, state):
+        # Define your actions logic here
+        # This should return a list of valid actions from the current state
+        position = state.curr_pos
+        possible_actions = ['DOWN', 'UP', 'LEFT', 'RIGHT']
+        column_length = len(state.array)
+        row_length = len(state.array[0])
+
+        if pathExists(state.array, state.curr_pos, state.last_pos) == False:
+            possible_actions = []
+            return possible_actions
+
+        if position[0] == column_length - 1:
+            possible_actions.remove('DOWN')
+        if position[0] == 0:
+            possible_actions.remove('UP')
+        if position[1] == 0:
+            possible_actions.remove('LEFT')
+        if position[1] == row_length - 1:
+            possible_actions.remove('RIGHT')
+        if inBounds(state.array, [
+            position[0] + 1, position[1]
+        ]) == True and state.array[position[0] + 1][position[1]] != '.' and [
+            position[0] + 1, position[1]
+        ] != state.last_pos:
+            possible_actions.remove('DOWN')
+
+        # (Continue with similar logic for other directions)
+
+        return possible_actions
+
+    def result(self, state, action):
+        # Define your result logic here
+        # This should return the new state after applying the action
+        new_state = deepcopy(state)
+
+        if action == "DOWN":
+            new_state.array[state.curr_pos[0] + 1][state.curr_pos[1]] = state.curr_letter
+            new_state.curr_pos[0] = state.curr_pos[0] + 1
+        elif action == "UP":
+            # (Similar logic for other directions)
+            pass
+
+        if new_state.curr_pos == state.last_pos:
+            return State(new_state.array, chr(ord(state.curr_letter) + 1),
+                         state.curr_ok + 1, [-1, -1], [-1, -1])
+        else:
+            return State(new_state.array, state.curr_letter, state.curr_ok,
+                         new_state.curr_pos, state.last_pos)
+
+    def heuristic(self, state):
+        # Define your heuristic logic here
+        # This should be the Manhattan distance heuristic
+        total_distance = 0
+        for letter in state.array:
+            if letter != '.':
+                start = state.findFirst(letter, state.array)
+                goal = state.findLast(letter, state.array)
+                total_distance += abs(start[0] - goal[0]) + abs(start[1] - goal[1])
+        return total_distance
+
+    def solve(self):
+        start_node = Node(self.initial)
+        frontier = PriorityQueue()
+        frontier.put((self.heuristic(start_node.state), start_node))  # Include a priority when adding the item
+
+        explored = set()
+
+        while not frontier.empty():  # Use empty() to check if the queue is empty
+            node = frontier.get()[1]  # Use get() to retrieve and remove the highest priority item and then get the item itself
+
+            if self.goal_test(node.state):
+                return node.solution()
+
+            explored.add(node.state)
+
+            for action in self.actions(node.state):
+                child_state = self.result(node.state, action)
+
+                if child_state not in explored and child_state not in frontier.queue:  # Use .queue to access the underlying list
+                    child_node = Node(
+                        child_state, node, action, node.path_cost + 1, self.heuristic(child_state)
+                    )
+                    frontier.put((child_node.path_cost, child_node))  # Include a priority when adding the item to the queue
+
+        return None
+
+
+    def solve_flow_free(self):
+        solution = self.solve()
+        if solution:
+            for state in solution:
+                print(state)
+        else:
+            print("No solution found.")
+
+
+def play_game(file_path, use_astar=False):
     problem = NumberLink(file_path)
-    solution = search.breadth_first_tree_search(problem)
+    solver = FlowFreeSolver(file_path)
+    
+    if use_astar:
+        solver = FlowFreeSolver(file_path)
+        solution = solver.solve_flow_free()
+    else:
+        solution = search.breadth_first_tree_search(problem)
 
-    print("Solution:")
     for n in solution.path():
         print(n.state)
-
-    print("Game Over!")
 
 
 def play_game_manual(file_path):
@@ -292,25 +408,29 @@ def play_game_manual(file_path):
 # Menú
 def main_menu():
     while True:
-        print("\n=== Number Link Game ===")
-        print("1. Jugar Maquina")  # Changed "Play Game" to "Jugar Maquina"
-        print("2. Exit")
-        print("3. Manual")  # Changed "Jugar Manual" to "Manual"
+        print("\n=-=-= Number Link Game =-=-=")
+        print("0. Exit")
+        print("1. Jugar Exhaustivo")
+        print("2. Jugar Heuristico")
+        print("3. Manual")
 
-        choice = input("Enter your choice (1, 2, or 3): ")
+        choice = input("Enter your choice (1, 2, 3, or 4): ")
 
         if choice == "1":
             file_path = input("Enter the path to the puzzle file: ")
             play_game(file_path)
-        elif choice == "2":
-            print("Goodbye!")
+        elif choice == "0":
+            print("¡Adios!")
             break
         elif choice == "3":
             print("You chose Manual!")
             file_path = input("Enter the path to the puzzle file: ")
             play_game_manual(file_path)
+        elif choice == "2":
+            file_path = input("Enter the path to the puzzle file: ")
+            play_game(file_path, use_astar=True)
         else:
-            print("Invalid choice. Please enter 1, 2, or 3.")
+            print("Invalid choice. Please enter 1, 2, 3, or 4.")
 
 
 if __name__ == "__main__":
